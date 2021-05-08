@@ -6,6 +6,7 @@
 import random
 import time
 import multiprocessing as mp
+import os 
 
 from .environment import prepare_env, make_env
 from .connection import send_recv, accept_socket_connections, connect_socket_connection
