@@ -155,7 +155,7 @@ class Environment(BaseEnvironment):
     def step(self, actions):
         # state transition
         state = self.env.step([self.action2str(actions.get(p, None) or 0) for p in self.players()])
-        state = hook_step(state)
+        state = self.hook_step(state)
 
         self.update((state, actions), False)
 
@@ -242,7 +242,7 @@ class Environment(BaseEnvironment):
 
         return b.reshape(-1, 7, 11)
 
-        def hook_step(state):
+        def hook_step(self,state):
             obs = state[0].observation
             geese = obs['geese']
 
