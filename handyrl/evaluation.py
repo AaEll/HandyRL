@@ -162,7 +162,7 @@ def eval_process_mp_child(agents, critic, env_args, index, in_queue, out_queue, 
     out_queue.put(None)
 
 
-def evaluate_mp(env, agents, critic, env_args, args_patterns, num_process, num_games, seed):
+def evaluate_mp(env, agents, critic, env_args, eval_args, args_patterns, num_process, num_games, seed):
     in_queue, out_queue = mp.Queue(), mp.Queue()
     args_cnt = 0
     total_results, result_map = [{} for _ in agents], [{} for _ in agents]
@@ -260,12 +260,23 @@ def client_mp_child(env_args, model_path, conn):
 
 def eval_main(args, argv):
     env_args = args['env_args']
+    eval_args = args.get('eval_args',{})
+    
     prepare_env(env_args)
     env = make_env(env_args)
 
-    model_path = argv[0] if len(argv) >= 1 else 'models/latest.pth'
-    num_games = int(argv[1]) if len(argv) >= 2 else 100
-    num_process = int(argv[2]) if len(argv) >= 3 else 1
+    model_path = eval_args.get('model_path','models/latest.pth')
+    num_games = int(eval_args.get('games','100'))
+    num_process = int(eval_args.get('processes','1'))
+    opponent = eval_args.get('opponent','random')
+    
+    def generate_opponent(env, opponent):
+        if opponent == 'random':
+            return RandomAgent()
+        elif os.path.isfile(opponent):
+            return Agent(get_model(env, opponent))
+        else:
+            ValueError(f'Unsupported opponent name :{opponent}\nOpponent must be either filepath \'models/latest.pth\' or \'random\'')
 
     agent1 = Agent(get_model(env, model_path))
     critic = None
@@ -275,9 +286,9 @@ def eval_main(args, argv):
     seed = random.randrange(1e8)
     print('seed = %d' % seed)
 
-    agents = [agent1] + [RandomAgent() for _ in range(len(env.players()) - 1)]
+    agents = [agent1] + [generate_opponent(env, opponent) for _ in range(len(env.players()) - 1)]
 
-    evaluate_mp(env, agents, critic, env_args, {'default': {}}, num_process, num_games, seed)
+    evaluate_mp(env, agents, critic, env_args,eval_args, {'default': {}}, num_process, num_games, seed)
 
 
 def eval_server_main(args, argv):
@@ -294,7 +305,7 @@ def eval_server_main(args, argv):
     seed = random.randrange(1e8)
     print('seed = %d' % seed)
 
-    evaluate_mp(env, [None] * len(env.players()), None, env_args, {'default': {}}, num_process, num_games, seed)
+    evaluate_mp(env, [None] * len(env.players()), None, env_args, {}, {'default': {}}, num_process, num_games, seed)
 
 
 def eval_client_main(args, argv):

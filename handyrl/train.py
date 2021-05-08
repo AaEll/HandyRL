@@ -28,6 +28,7 @@ from .losses import compute_target
 from .connection import MultiProcessJobExecutor
 from .connection import accept_socket_connections
 from .worker import WorkerCluster
+from .evaluation import eval_main
 
 
 def make_batch(episodes, args):
@@ -546,9 +547,12 @@ class Learner:
         # returns as list if getting multiple requests as list
         print('started server')
         prev_update_episodes = self.args['minimum_episodes']
+        if_run_eval = 'eval_args' in self.args 
+
         while self.model_era < self.args['epochs'] or self.args['epochs'] < 0:
             # no update call before storing minimum number of episodes + 1 age
             next_update_episodes = prev_update_episodes + self.args['update_episodes']
+
             while not self.shutdown_flag and self.num_episodes < next_update_episodes:
                 conn, (req, data) = self.worker.recv()
                 multi_req = isinstance(data, list)
@@ -617,6 +621,11 @@ class Learner:
                 self.worker.send(conn, send_data)
             prev_update_episodes = next_update_episodes
             self.update()
+            
+            if if_run_eval:
+                eval_main(self.args,None)
+
+
         print('finished server')
 
     def entry_server(self):
