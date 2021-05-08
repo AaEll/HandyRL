@@ -198,7 +198,7 @@ def evaluate_mp(env, agents, critic, env_args, eval_args, args_patterns, num_pro
                 for agent in agents[i]:
                     agent.conn.close()
         else:
-            eval_process_mp_child(*args, show=True)
+            eval_process_mp_child(*args, show=False)
 
     finished_cnt = 0
     while finished_cnt < num_process:
