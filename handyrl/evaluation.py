@@ -153,7 +153,8 @@ def eval_process_mp_child(agents, critic, env_args, index, in_queue, out_queue, 
         if args is None:
             break
         g, agent_ids, pat_idx, game_args = args
-        print('*** Game %d ***' % g)
+        if show:
+            print('*** Game %d ***' % g)
         agent_map = {env.players()[p]: agents[ai] for p, ai in enumerate(agent_ids)}
         if isinstance(list(agent_map.values())[0], NetworkAgent):
             outcome = exec_network_match(env, agent_map, critic, show=show, game_args=game_args)
