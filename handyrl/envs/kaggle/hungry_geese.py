@@ -242,16 +242,16 @@ class Environment(BaseEnvironment):
 
         return b.reshape(-1, 7, 11)
 
-        def hook_step(self,state):
-            obs = state[0].observation
-            geese = obs['geese']
+    def hook_step(self,state):
+        obs = state[0].observation
+        geese = obs['geese']
 
-            done_geese = sum([1 for goose in geese if not goose ])
-            for index, agent in enumerate(state):
-                if agent.status == "ACTIVE":
-                    # Adding 1 to len(env.steps) ensures that if an agent gets reward 4507, it died on turn 45 with length 7.
-                    agent.reward = agent.reward + (done_geese-2)*2000
-            return state
+        done_geese = sum([1 for goose in geese if not goose ])
+        for index, agent in enumerate(state):
+            if agent.status == "ACTIVE":
+                # Adding 1 to len(env.steps) ensures that if an agent gets reward 4507, it died on turn 45 with length 7.
+                agent.reward = agent.reward + (done_geese-2)*2000
+        return state
             
 
 
