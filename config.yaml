@@ -18,7 +18,7 @@ train_args:
     maximum_episodes: 150000
     epochs: 120
     num_batchers: 7
-    eval_rate: 0.1
+    eval_rate: 0.001
     worker:
         num_parallel: 6
     lambda: 0.7
