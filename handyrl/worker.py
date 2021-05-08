@@ -29,7 +29,7 @@ class Worker:
         self.conn = conn
         self.latest_model = -1, None
 
-        env = make_env({**args['env'], 'id': wid})
+        env = make_env({**args['env_args'], 'id': wid})
         self.generator = Generator(env, self.args)
         self.evaluator = Evaluator(env, self.args)
 
@@ -208,7 +208,7 @@ def worker_main(args):
 
     args = entry(worker_args)
     print(args)
-    prepare_env(args['env'])
+    prepare_env(args['env_args'])
 
     # open workers
     process = []
