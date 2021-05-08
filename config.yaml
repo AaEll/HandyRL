@@ -1,25 +1,23 @@
 
 env_args:
-    env: 'TicTacToe'
-    #env: 'Geister'
-    #env: 'HungryGeese'
-    #env: 'handyrl.envs.parallel_tictactoe'  # specify by path
+    env: 'HungryGeese'
+    source: 'handyrl.envs.kaggle.hungry_geese'
 
 train_args:
-    turn_based_training: True
+    turn_based_training: False
     observation: False
     gamma: 0.8
     forward_steps: 32
     compress_steps: 4
-    learning_rate: 6.0e-9
-    entropy_regularization: 1.0e-1
-    entropy_regularization_decay: 0.1
+    learning_rate: 6.0e-10
+    entropy_regularization: 2.0e-3
+    entropy_regularization_decay: 0.3
     update_episodes: 2000
     batch_size: 128
     minimum_episodes: 2000
     maximum_episodes: 150000
-    epochs: -1
-    num_batchers: 2
+    epochs: 120
+    num_batchers: 7
     eval_rate: 0.1
     worker:
         num_parallel: 6
@@ -32,7 +30,7 @@ train_args:
 eval_args:
     model_path: 'models/latest.pth'
     opponent: 'models/1.pth'
-    games: 400
+    games: 200
     processes: 1
 
 
