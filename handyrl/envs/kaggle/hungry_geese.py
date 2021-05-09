@@ -250,7 +250,7 @@ class Environment(BaseEnvironment):
         for index, agent in enumerate(state):
             if agent.status == "ACTIVE":
                 # Adding 1 to len(env.steps) ensures that if an agent gets reward 4507, it died on turn 45 with length 7.
-                agent.reward = agent.reward + (done_geese-2)*100
+                agent.reward = agent.reward + (done_geese-2)*500
         return state
             
 
