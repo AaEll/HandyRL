@@ -21,6 +21,7 @@ from ...environment import BaseEnvironment
 
 
 def override_interpreter(state, env):
+    print("!")
     configuration = Configuration(env.configuration)
     columns = configuration.columns
     rows = configuration.rows
