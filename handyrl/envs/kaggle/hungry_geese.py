@@ -20,134 +20,11 @@ from kaggle_environments.envs.hungry_geese.hungry_geese import *
 from ...environment import BaseEnvironment
 
 
-def override_interpreter(state, env):
-    print("!")
-    configuration = Configuration(env.configuration)
-    columns = configuration.columns
-    rows = configuration.rows
-    min_food = configuration.min_food
-    state[0].observation = shared_observation = Observation(state[0].observation)
-    hits = 0
-
-    # Reset the environment.
-    if env.done:
-        agent_count = len(state)
-        heads = sample(range(columns * rows), agent_count)
-        shared_observation["geese"] = [[head] for head in heads]
-        food_candidates = set(range(columns * rows)).difference(heads)
-        # Ensure we only place as many food as there are open squares
-        min_food = min(min_food, len(food_candidates))
-        shared_observation["food"] = sample(food_candidates, min_food)
-        return state
-
-    geese = shared_observation.geese
-    food = shared_observation.food
-
-    # If there is no last state, reuse current state so that current action is never the opposite of the last action.
-    last_state = env.steps[-1] if len(env.steps) > 1 else state
-    # Apply the actions from active agents.
-    for index, agent in enumerate(state):
-        if agent.status != "ACTIVE":
-            if agent.status != "INACTIVE" and agent.status != "DONE":
-                # ERROR, INVALID, or TIMEOUT, remove the goose.
-                geese[index] = []
-            continue
-
-        action = Action[agent.action]
-
-        # Check action direction
-        last_agent = last_state[index]
-        last_action = Action[last_agent["action"]] if "action" in last_agent else action
-        if last_action == action.opposite():
-            env.debug_print(f"Opposite action: {agent.observation.index, action, last_action}")
-            agent.status = "DONE"
-            geese[index] = []
-            hits +=1            
-            continue
-
-        goose = geese[index]
-        head = translate(goose[0], action, columns, rows)
-
-        # Consume food or drop a tail piece.
-        if head in food:
-            food.remove(head)
-        else:
-            goose.pop()
-
-        # Self collision.
-        if head in goose:
-            env.debug_print(f"Body Hit: {agent.observation.index, action, head, goose}")
-            agent.status = "DONE"
-            geese[index] = []
-            hits +=1
-            continue
-
-        while len(goose) >= configuration.max_length:
-            # Free a spot for the new head if needed
-            goose.pop()
-        # Add New Head to the Goose.
-        goose.insert(0, head)
-
-        # If hunger strikes remove from the tail.
-        if len(env.steps) % configuration.hunger_rate == 0:
-            if len(goose) > 0:
-                goose.pop()
-            if len(goose) == 0:
-                env.debug_print(f"Goose Starved: {action}")
-                agent.status = "DONE"
-                hits +=1
-                continue
-
-    goose_positions = histogram(
-        position
-        for goose in geese
-        for position in goose
-    )
-
-    # Check for collisions.
-    for index, agent in enumerate(state):
-        goose = geese[index]
-        if len(goose) > 0:
-            head = geese[index][0]
-            if goose_positions[head] > 1:
-                env.debug_print(f"Goose Collision: {agent.action}")
-                agent.status = "DONE"
-                geese[index] = []
-                hits +=1
-
-    # Add food if min_food threshold reached.
-    needed_food = min_food - len(food)
-    if needed_food > 0:
-        collisions = {
-            position
-            for goose in geese
-            for position in goose
-        }
-        available_positions = set(range(rows * columns)).difference(collisions).difference(food)
-        # Ensure we don't sample more food than available positions.
-        needed_food = min(needed_food, len(available_positions))
-        food.extend(sample(available_positions, needed_food))
-
-    # Set rewards after deleting all geese to ensure that geese don't receive a reward on the turn they perish.
-    for index, agent in enumerate(state):
-        if agent.status == "ACTIVE":
-            agent.reward = (configuration.max_length + 1)*(hits+1) + len(geese[index]) 
-
-            # Adding 1 to len(env.steps) ensures that if an agent gets reward 4507, it died on turn 45 with length 7.
-
-    # If only one ACTIVE agent left, set it to DONE.
-    active_agents = [a for a in state if a.status == "ACTIVE"]
-    if len(active_agents) == 1:
-        agent = active_agents[0]
-        agent.status = "DONE"
-
-    return state
-
 class TorusConv2d(nn.Module):
     def __init__(self, input_dim, output_dim, kernel_size, bn):
         super().__init__()
         self.edge_size = (kernel_size[0] // 2, kernel_size[1] // 2)
-        self.conv = nn.Conv2d(input_dim, output_dim, kernel_size=kernel_size)
+        self.conv = nn.Conv2d(input_dim, output_dim, bias = False, kernel_size=kernel_size)
         self.bn = nn.BatchNorm2d(output_dim) if bn else None
 
     def forward(self, x):
@@ -161,7 +38,7 @@ class TorusConv2d(nn.Module):
 class GeeseNet(nn.Module):
     def __init__(self):
         super().__init__()
-        layers, filters = 12, 32
+        layers, filters = 16, 64
 
         self.conv0 = TorusConv2d(17, filters, (3, 3), True)
         self.blocks = nn.ModuleList([TorusConv2d(filters, filters, (3, 3), True) for _ in range(layers)])
@@ -337,30 +214,30 @@ class Environment(BaseEnvironment):
         if player is None:
             player = 0
 
-        b = np.zeros((self.NUM_AGENTS * 4 + 1, 7 * 11), dtype=np.float32)
+        b = np.zeros((self.NUM_AGENTS * 3 + 1, 7 * 11), dtype=np.float32)
         obs = self.obs_list[-1][0]['observation']
 
         for p, geese in enumerate(obs['geese']):
             # head position
             for pos in geese[:1]:
-                b[0 + (p - player) % self.NUM_AGENTS, pos] = 1
+                b[3*((p - player) % self.NUM_AGENTS)+1, pos] = 1
             # tip position
             for pos in geese[-1:]:
-                b[4 + (p - player) % self.NUM_AGENTS, pos] = 1
+                b[3*((p - player) % self.NUM_AGENTS)+3, pos] = -1
             # whole position
             for pos in geese:
-                b[8 + (p - player) % self.NUM_AGENTS, pos] = 1
+                b[3*((p - player) % self.NUM_AGENTS)+3, pos] = 1
 
         # previous head position
         if len(self.obs_list) > 1:
             obs_prev = self.obs_list[-2][0]['observation']
             for p, geese in enumerate(obs_prev['geese']):
                 for pos in geese[:1]:
-                    b[12 + (p - player) % self.NUM_AGENTS, pos] = 1
+                    b[3*((p - player) % self.NUM_AGENTS)+2, pos] = 1
 
         # food
         for pos in obs['food']:
-            b[16, pos] = 1
+            b[0, pos] = 1
 
         return b.reshape(-1, 7, 11)
 
