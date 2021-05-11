@@ -38,9 +38,9 @@ class TorusConv2d(nn.Module):
 class GeeseNet(nn.Module):
     def __init__(self):
         super().__init__()
-        layers, filters = 16, 64
+        layers, filters = 8, 32
 
-        self.conv0 = TorusConv2d(17, filters, (3, 3), True)
+        self.conv0 = TorusConv2d(4, filters, (3, 3), True)
         self.blocks = nn.ModuleList([TorusConv2d(filters, filters, (3, 3), True) for _ in range(layers)])
         self.head_p = nn.Linear(filters, 4, bias=False)
         self.head_v = nn.Linear(filters * 2, 1, bias=False)
@@ -214,30 +214,35 @@ class Environment(BaseEnvironment):
         if player is None:
             player = 0
 
-        b = np.zeros((self.NUM_AGENTS * 3 + 1, 7 * 11), dtype=np.float32)
+        b = np.zeros((4, 7 * 11), dtype=np.float32)
         obs = self.obs_list[-1][0]['observation']
 
         for p, geese in enumerate(obs['geese']):
+
+            
+            # body position
+            for pos in geese:
+                b[:,pos] = -1
+                b[((p-player) % self.NUM_AGENTS), pos] = 1
             # head position
             for pos in geese[:1]:
-                b[3*((p - player) % self.NUM_AGENTS)+1, pos] = 1
+                b[:,pos] = -10
+                b[((p - player) % self.NUM_AGENTS), pos] = 10
             # tip position
             for pos in geese[-1:]:
-                b[3*((p - player) % self.NUM_AGENTS)+3, pos] = -1
-            # whole position
-            for pos in geese:
-                b[3*((p - player) % self.NUM_AGENTS)+3, pos] = 1
+                b[:,pos] = -.1
+                b[((p - player) % self.NUM_AGENTS), pos] = .1
 
         # previous head position
         if len(self.obs_list) > 1:
             obs_prev = self.obs_list[-2][0]['observation']
             for p, geese in enumerate(obs_prev['geese']):
                 for pos in geese[:1]:
-                    b[3*((p - player) % self.NUM_AGENTS)+2, pos] = 1
+                    b[((p - player) % self.NUM_AGENTS), pos] = 1
 
         # food
         for pos in obs['food']:
-            b[0, pos] = 1
+            b[:, pos] = 24
 
         return b.reshape(-1, 7, 11)
 
