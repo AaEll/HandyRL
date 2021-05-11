@@ -549,7 +549,7 @@ class Learner:
         # returns as list if getting multiple requests as list
         print('started server')
         prev_update_episodes = self.args['minimum_episodes']
-        if_run_eval = 'eval_args' in self.args 
+        if_run_eval = self.args['eval_args']
 
         while self.model_era < self.args['epochs'] or self.args['epochs'] < 0:
             # no update call before storing minimum number of episodes + 1 age
