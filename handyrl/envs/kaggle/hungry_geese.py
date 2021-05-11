@@ -250,8 +250,6 @@ class Environment(BaseEnvironment):
         geese = obs['geese']
 
         for index, agent in enumerate(state):
-            if agent.status == "ACTIVE":
-                # Adding 1 to len(env.steps) ensures that if an agent gets reward 4507, it died on turn 45 with length 7.
             agent.reward = len(geese[index])*4 - sum((len(goose) for goose in geese))
         return state
 
