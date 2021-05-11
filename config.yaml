@@ -9,18 +9,18 @@ train_args:
     gamma: 0.8
     forward_steps: 32
     compress_steps: 4
-    learning_rate: 6.0e-9
+    learning_rate: 1.0e-8
     entropy_regularization: 2.0e-3
     entropy_regularization_decay: 0.3
     update_episodes: 2000
     batch_size: 128
     minimum_episodes: 2000
     maximum_episodes: 150000
-    epochs: 120
-    num_batchers: 7
+    epochs: -1
+    num_batchers: 8
     eval_rate: 0.001
     worker:
-        num_parallel: 6
+        num_parallel: 14
     lambda: 0.7
     policy_target: 'TD' # 'UPGO' 'VTRACE' 'TD' 'MC'
     value_target: 'TD' # 'VTRACE' 'TD' 'MC'
@@ -37,4 +37,5 @@ eval_args:
 worker_args:
     server_address: ''
     num_parallel: 8
+
 

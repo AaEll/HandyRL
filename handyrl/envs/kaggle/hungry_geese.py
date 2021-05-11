@@ -64,7 +64,6 @@ class Environment(BaseEnvironment):
     def __init__(self, args={}):
         super().__init__()
         self.env = make("hungry_geese")
-        self.env.interpreter = override_interpreter
         self.reset()
 
     def reset(self, args={}):
@@ -155,6 +154,7 @@ class Environment(BaseEnvironment):
     def step(self, actions):
         # state transition
         state = self.env.step([self.action2str(actions.get(p, None) or 0) for p in self.players()])
+        state = self.hook_step(state)
 
         self.update((state, actions), False)
 
@@ -245,7 +245,17 @@ class Environment(BaseEnvironment):
             b[:, pos] = 24
 
         return b.reshape(-1, 7, 11)
+    def hook_step(self, state):
+        obs = state[0].observation
+        geese = obs['geese']
 
+        for index, agent in enumerate(state):
+            if agent.status == "ACTIVE":
+                # Adding 1 to len(env.steps) ensures that if an agent gets reward 4507, it died on turn 45 with length 7.
+            agent.reward = len(geese[index])*4 - sum((len(goose) for goose in geese))
+        return state
+
+        
 
 
 if __name__ == '__main__':
