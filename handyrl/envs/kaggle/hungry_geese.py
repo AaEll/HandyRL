@@ -38,7 +38,7 @@ class TorusConv2d(nn.Module):
 class GeeseNet(nn.Module):
     def __init__(self):
         super().__init__()
-        layers, filters = 8, 32
+        layers, filters = 14, 64
 
         self.conv0 = TorusConv2d(4, filters, (3, 3), True)
         self.blocks = nn.ModuleList([TorusConv2d(filters, filters, (3, 3), True) for _ in range(layers)])

@@ -13,9 +13,9 @@ train_args:
     entropy_regularization: 2.0e-3
     entropy_regularization_decay: 0.3
     update_episodes: 2000
-    batch_size: 128
+    batch_size: 256 
     minimum_episodes: 2000
-    maximum_episodes: 150000
+    maximum_episodes: 500000
     epochs: -1
     num_batchers: 8
     eval_rate: 0.001
@@ -25,13 +25,7 @@ train_args:
     policy_target: 'TD' # 'UPGO' 'VTRACE' 'TD' 'MC'
     value_target: 'TD' # 'VTRACE' 'TD' 'MC'
     seed: 0
-    restart_epoch: 42
-
-eval_args:
-    model_path: 'models/latest.pth'
-    opponent: 'models/1.pth'
-    games: 200
-    processes: 1
+    restart_epoch: 0
 
 
 worker_args:
